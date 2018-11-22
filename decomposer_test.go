@@ -6,62 +6,66 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockUIDGenerator struct{}
+
+func (m *mockUIDGenerator) Generate(_ string) interface{} {
+	return "unique"
+}
+
 func TestDecomposer(t *testing.T) {
-	decomposer := NewDecomposer(func(option *Option) {
-		option.IDGenerator = func() string {
-			return "unique"
-		}
+	decomposer := NewDecomposer(func(decomposer *Decomposer) {
+		decomposer.UIDGenerator = &mockUIDGenerator{}
 	})
 	logs := []string{
-		`{"id":1,"table":"user","name":"user1","status":{"offence":100,"deffence":200,"skillType":"knight"},"tags":["fighter","ranker"],"items":[{"id":3,"type":"weapon","count":10},{"id":1,"type":"money","count":10000}]}`,
+		`{"id":1,"name":"user1","status":{"offence":100,"deffence":200,"skillType":"knight"},"tags":["fighter","ranker"],"items":[{"id":3,"type":"weapon","count":10},{"id":1,"type":"money","count":10000}]}`,
 	}
 	for _, log := range logs {
-		decomposer.Do([]byte(log))
+		decomposer.EventEmitter <- NewInputEvent("user", []byte(log))
 	}
-	close(decomposer.logChan)
+	close(decomposer.EventEmitter)
 
-	actuals := []Event{}
+	actuals := []*OutputEvent{}
 	for len(actuals) < 6 {
 		select {
-		case event := <-decomposer.EventChan:
+		case event := <-decomposer.EventListener:
 			actuals = append(actuals, event)
-		case err := <-decomposer.ErrorChan:
+		case err := <-decomposer.ErrorListener:
 			t.Error(t, err)
 		}
 	}
 
-	expects := []Event{
-		Event{
-			table: "status",
-			record: map[string]interface{}{
+	expects := []*OutputEvent{
+		&OutputEvent{
+			Table: "status",
+			Record: map[string]interface{}{
 				"skill_type": "knight",
 				"user_id":    "unique",
-				"status_id":  "unique",
+				"id":         "unique",
 				"offence":    float64(100),
 				"deffence":   float64(200),
 			},
 		},
-		Event{
-			table: "tags",
-			record: map[string]interface{}{
+		&OutputEvent{
+			Table: "tags",
+			Record: map[string]interface{}{
 				"index":   1,
 				"user_id": "unique",
-				"tags_id": "unique",
+				"id":      "unique",
 				"tags":    "fighter",
 			},
 		},
-		Event{
-			table: "tags",
-			record: map[string]interface{}{
+		&OutputEvent{
+			Table: "tags",
+			Record: map[string]interface{}{
 				"index":   2,
 				"user_id": "unique",
-				"tags_id": "unique",
+				"id":      "unique",
 				"tags":    "ranker",
 			},
 		},
-		Event{
-			table: "items",
-			record: map[string]interface{}{
+		&OutputEvent{
+			Table: "items",
+			Record: map[string]interface{}{
 				"id":       float64(3),
 				"type":     "weapon",
 				"count":    float64(10),
@@ -70,9 +74,9 @@ func TestDecomposer(t *testing.T) {
 				"items_id": "unique",
 			},
 		},
-		Event{
-			table: "items",
-			record: map[string]interface{}{
+		&OutputEvent{
+			Table: "items",
+			Record: map[string]interface{}{
 				"id":       float64(1),
 				"type":     "money",
 				"count":    float64(10000),
@@ -81,10 +85,9 @@ func TestDecomposer(t *testing.T) {
 				"items_id": "unique",
 			},
 		},
-		Event{
-			table: "user",
-			record: map[string]interface{}{
-				"table":   "user",
+		&OutputEvent{
+			Table: "user",
+			Record: map[string]interface{}{
 				"name":    "user1",
 				"user_id": "unique",
 				"id":      float64(1),
