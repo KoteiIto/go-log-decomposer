@@ -17,6 +17,7 @@ type UIDFieldGenerator interface {
 }
 
 type Decomposer struct {
+	WorkerCount       int
 	EventEmitter      chan *InputEvent
 	EventListener     chan *OutputEvent
 	ErrorListener     chan error
@@ -29,6 +30,7 @@ type Decomposer struct {
 
 func NewDecomposer(fs ...func(*Decomposer)) *Decomposer {
 	decomposer := &Decomposer{
+		WorkerCount:       1,
 		EventEmitter:      make(chan *InputEvent, 1000),
 		EventListener:     make(chan *OutputEvent, 1000),
 		ErrorListener:     make(chan error, 1000),
@@ -48,6 +50,12 @@ func NewDecomposer(fs ...func(*Decomposer)) *Decomposer {
 }
 
 func (d *Decomposer) start() {
+	for i := 0; i < d.WorkerCount; i++ {
+		go d.startWorker()
+	}
+}
+
+func (d *Decomposer) startWorker() {
 LOOP:
 	for {
 		select {

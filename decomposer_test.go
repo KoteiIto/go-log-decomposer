@@ -14,6 +14,7 @@ func (m *mockUIDGenerator) Generate(_ string) interface{} {
 
 func TestDecomposer(t *testing.T) {
 	decomposer := NewDecomposer(func(decomposer *Decomposer) {
+		decomposer.WorkerCount = 5
 		decomposer.UIDGenerator = &mockUIDGenerator{}
 	})
 	logs := []string{
