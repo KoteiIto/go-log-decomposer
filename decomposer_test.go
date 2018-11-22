@@ -37,7 +37,7 @@ func TestDecomposer(t *testing.T) {
 
 	expects := []*OutputEvent{
 		&OutputEvent{
-			Table: "status",
+			Table: "user_status",
 			Record: map[string]interface{}{
 				"skill_type": "knight",
 				"user_id":    "unique",
@@ -47,43 +47,43 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "tags",
+			Table: "user_tags",
 			Record: map[string]interface{}{
 				"index":   1,
 				"user_id": "unique",
 				"id":      "unique",
-				"tags":    "fighter",
+				"value":   "fighter",
 			},
 		},
 		&OutputEvent{
-			Table: "tags",
+			Table: "user_tags",
 			Record: map[string]interface{}{
 				"index":   2,
 				"user_id": "unique",
 				"id":      "unique",
-				"tags":    "ranker",
+				"value":   "ranker",
 			},
 		},
 		&OutputEvent{
-			Table: "items",
+			Table: "user_items",
 			Record: map[string]interface{}{
-				"id":       float64(3),
-				"type":     "weapon",
-				"count":    float64(10),
-				"index":    1,
-				"user_id":  "unique",
-				"items_id": "unique",
+				"id":            float64(3),
+				"type":          "weapon",
+				"count":         float64(10),
+				"index":         1,
+				"user_id":       "unique",
+				"user_items_id": "unique",
 			},
 		},
 		&OutputEvent{
-			Table: "items",
+			Table: "user_items",
 			Record: map[string]interface{}{
-				"id":       float64(1),
-				"type":     "money",
-				"count":    float64(10000),
-				"index":    2,
-				"user_id":  "unique",
-				"items_id": "unique",
+				"id":            float64(1),
+				"type":          "money",
+				"count":         float64(10000),
+				"index":         2,
+				"user_id":       "unique",
+				"user_items_id": "unique",
 			},
 		},
 		&OutputEvent{

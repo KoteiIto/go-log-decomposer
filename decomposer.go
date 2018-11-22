@@ -2,11 +2,12 @@ package decomposer
 
 import (
 	"encoding/json"
+	"regexp"
+	"strings"
 )
 
-type ReplacementRule interface {
-	Replace(string) string
-}
+var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
 
 type UIDGenerator interface {
 	Generate(tableName string) interface{}
@@ -17,15 +18,16 @@ type UIDFieldGenerator interface {
 }
 
 type Decomposer struct {
-	WorkerCount       int
-	EventEmitter      chan *InputEvent
-	EventListener     chan *OutputEvent
-	ErrorListener     chan error
-	UnmarshalLog      func([]byte, interface{}) error
-	UIDGenerator      UIDGenerator
-	UIDFieldGenerator UIDFieldGenerator
-	ColumnNameRule    ReplacementRule
-	replacementCache  *replacementCache
+	WorkerCount          int
+	EventEmitter         chan *InputEvent
+	EventListener        chan *OutputEvent
+	ErrorListener        chan error
+	UnmarshalLog         func([]byte, interface{}) error
+	UIDGenerator         UIDGenerator
+	UIDFieldGenerator    UIDFieldGenerator
+	replacementCache     *replacementCache
+	ReplaceColumnName    func(original string) string
+	CreateChildTableName func(table, column string) string
 }
 
 func NewDecomposer(fs ...func(*Decomposer)) *Decomposer {
@@ -37,8 +39,15 @@ func NewDecomposer(fs ...func(*Decomposer)) *Decomposer {
 		UnmarshalLog:      json.Unmarshal,
 		UIDGenerator:      NewDefaultUIDGenerator(),
 		UIDFieldGenerator: NewDefaultUIDFieldGenerator(),
-		ColumnNameRule:    NewDefaultReplacementRule(),
 		replacementCache:  newReplacementCache(),
+		ReplaceColumnName: func(original string) string {
+			snake := matchFirstCap.ReplaceAllString(original, "${1}_${2}")
+			snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+			return strings.ToLower(snake)
+		},
+		CreateChildTableName: func(table, column string) string {
+			return table + "_" + column
+		},
 	}
 	for _, f := range fs {
 		f(decomposer)
@@ -88,33 +97,33 @@ func (d *Decomposer) decomposeObject(
 		return
 	}
 
-	uidColumnName := d.UIDFieldGenerator.Generate(tableName, obj)
-	uidColumnValue := d.UIDGenerator.Generate(tableName)
-	obj[uidColumnName] = uidColumnValue
-
 	outputEvent := NewOutputEvent(tableName)
-	for originalColumnName, columnValue := range obj {
-		var columnName string
-		if d.ColumnNameRule != nil {
-			cachedName, ok := d.replacementCache.Get(originalColumnName)
-			if ok {
-				columnName = cachedName
-			} else {
-				columnName = d.ColumnNameRule.Replace(originalColumnName)
-				d.replacementCache.Set(originalColumnName, columnName)
-			}
-		}
-		switch v := columnValue.(type) {
+	for columnName, columnValue := range obj {
+		columnName := d.replaceColumnName(columnName)
+		switch columnValue.(type) {
 		case map[string]interface{}:
-			v[uidColumnName] = uidColumnValue
-			d.decomposeObject(columnName, v)
 		case []interface{}:
-			d.decomposeArray(columnName, v, uidColumnName, uidColumnValue)
 		default:
+			delete(obj, columnName)
 			outputEvent.Record[columnName] = columnValue
 		}
 	}
+
+	uidColumnName := d.UIDFieldGenerator.Generate(tableName, outputEvent.Record)
+	uidColumnValue := d.UIDGenerator.Generate(tableName)
+	outputEvent.Record[uidColumnName] = uidColumnValue
 	d.EventListener <- outputEvent
+
+	for columnName, columnValue := range obj {
+		columnName := d.replaceColumnName(columnName)
+		switch v := columnValue.(type) {
+		case map[string]interface{}:
+			v[uidColumnName] = uidColumnValue
+			d.decomposeObject(d.CreateChildTableName(tableName, columnName), v)
+		case []interface{}:
+			d.decomposeArray(d.CreateChildTableName(tableName, columnName), v, uidColumnName, uidColumnValue)
+		}
+	}
 }
 
 func (d *Decomposer) decomposeArray(
@@ -131,10 +140,22 @@ func (d *Decomposer) decomposeArray(
 		obj, ok := v.(map[string]interface{})
 		if !ok {
 			obj = map[string]interface{}{}
-			obj[tableName] = v
+			obj["value"] = v
 		}
 		obj["index"] = i + 1
 		obj[uidColumnName] = uidColumnValue
 		d.decomposeObject(tableName, obj)
 	}
+}
+
+func (d *Decomposer) replaceColumnName(originalColumnName string) string {
+	var columnName string
+	cachedName, ok := d.replacementCache.Get(originalColumnName)
+	if ok {
+		columnName = cachedName
+	} else {
+		columnName = d.ReplaceColumnName(originalColumnName)
+		d.replacementCache.Set(originalColumnName, columnName)
+	}
+	return columnName
 }

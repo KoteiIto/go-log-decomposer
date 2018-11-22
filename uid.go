@@ -20,13 +20,13 @@ func NewDefaultUIDFieldGenerator() *DefaultUIDFieldGenerator {
 	return &DefaultUIDFieldGenerator{}
 }
 
-func (u *DefaultUIDFieldGenerator) Generate(tableName string, obj map[string]interface{}) string {
-	if _, ok := obj["id"]; !ok {
+func (u *DefaultUIDFieldGenerator) Generate(tableName string, record map[string]interface{}) string {
+	if _, ok := record["id"]; !ok {
 		return "id"
 	}
 
 	fieldName := tableName + "_id"
-	if _, ok := obj[fieldName]; !ok {
+	if _, ok := record[fieldName]; !ok {
 		return fieldName
 	}
 
