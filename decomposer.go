@@ -86,18 +86,22 @@ func (d *Decomposer) do(inputEvent *InputEvent) {
 		return
 	}
 
-	d.decomposeObject(inputEvent.Table, obj)
+	d.decomposeObject(inputEvent.Name, obj)
 }
 
 func (d *Decomposer) decomposeObject(
-	tableName string,
+	name string,
 	obj map[string]interface{},
 ) {
 	if len(obj) == 0 {
 		return
 	}
 
-	outputEvent := NewOutputEvent(tableName)
+	splitedName := strings.Split(name, "/")
+	splitedNameLen := len(splitedName)
+	tableName := splitedName[splitedNameLen-1]
+
+	outputEvent := NewOutputEvent(name)
 	for columnName, columnValue := range obj {
 		columnName := d.replaceColumnName(columnName)
 		switch columnValue.(type) {
@@ -116,18 +120,21 @@ func (d *Decomposer) decomposeObject(
 
 	for columnName, columnValue := range obj {
 		columnName := d.replaceColumnName(columnName)
+		childTableName := d.CreateChildTableName(tableName, columnName)
+		splitedName[splitedNameLen-1] = childTableName
+		childName := strings.Join(splitedName, "/")
 		switch v := columnValue.(type) {
 		case map[string]interface{}:
 			v[uidColumnName] = uidColumnValue
-			d.decomposeObject(d.CreateChildTableName(tableName, columnName), v)
+			d.decomposeObject(childName, v)
 		case []interface{}:
-			d.decomposeArray(d.CreateChildTableName(tableName, columnName), v, uidColumnName, uidColumnValue)
+			d.decomposeArray(childName, v, uidColumnName, uidColumnValue)
 		}
 	}
 }
 
 func (d *Decomposer) decomposeArray(
-	tableName string,
+	name string,
 	arr []interface{},
 	uidColumnName string,
 	uidColumnValue interface{},
@@ -144,7 +151,7 @@ func (d *Decomposer) decomposeArray(
 		}
 		obj["index"] = i
 		obj[uidColumnName] = uidColumnValue
-		d.decomposeObject(tableName, obj)
+		d.decomposeObject(name, obj)
 	}
 }
 

@@ -1,25 +1,25 @@
 package decomposer
 
 type InputEvent struct {
-	Table string
-	Log   []byte
+	Name string
+	Log  []byte
 }
 
-func NewInputEvent(table string, log []byte) *InputEvent {
+func NewInputEvent(name string, log []byte) *InputEvent {
 	return &InputEvent{
-		Table: table,
-		Log:   log,
+		Name: name,
+		Log:  log,
 	}
 }
 
 type OutputEvent struct {
-	Table  string
+	Name   string
 	Record map[string]interface{}
 }
 
-func NewOutputEvent(table string) *OutputEvent {
+func NewOutputEvent(name string) *OutputEvent {
 	return &OutputEvent{
-		Table:  table,
+		Name:   name,
 		Record: map[string]interface{}{},
 	}
 }

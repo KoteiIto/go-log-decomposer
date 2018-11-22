@@ -21,7 +21,7 @@ func TestDecomposer(t *testing.T) {
 		`{"id":1,"name":"user1","status":{"offence":100,"deffence":200,"skillType":"knight"},"tags":["fighter","ranker"],"items":[{"id":3,"type":"weapon","count":10},{"id":1,"type":"money","count":10000}]}`,
 	}
 	for _, log := range logs {
-		decomposer.EventEmitter <- NewInputEvent("user", []byte(log))
+		decomposer.EventEmitter <- NewInputEvent("project/user", []byte(log))
 	}
 	close(decomposer.EventEmitter)
 
@@ -37,7 +37,7 @@ func TestDecomposer(t *testing.T) {
 
 	expects := []*OutputEvent{
 		&OutputEvent{
-			Table: "user_status",
+			Name: "project/user_status",
 			Record: map[string]interface{}{
 				"skill_type": "knight",
 				"user_id":    "unique",
@@ -47,7 +47,7 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "user_tags",
+			Name: "project/user_tags",
 			Record: map[string]interface{}{
 				"index":   0,
 				"user_id": "unique",
@@ -56,7 +56,7 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "user_tags",
+			Name: "project/user_tags",
 			Record: map[string]interface{}{
 				"index":   1,
 				"user_id": "unique",
@@ -65,7 +65,7 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "user_items",
+			Name: "project/user_items",
 			Record: map[string]interface{}{
 				"id":            float64(3),
 				"type":          "weapon",
@@ -76,7 +76,7 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "user_items",
+			Name: "project/user_items",
 			Record: map[string]interface{}{
 				"id":            float64(1),
 				"type":          "money",
@@ -87,7 +87,7 @@ func TestDecomposer(t *testing.T) {
 			},
 		},
 		&OutputEvent{
-			Table: "user",
+			Name: "project/user",
 			Record: map[string]interface{}{
 				"name":    "user1",
 				"user_id": "unique",
