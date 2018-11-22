@@ -49,7 +49,7 @@ func TestDecomposer(t *testing.T) {
 		&OutputEvent{
 			Table: "user_tags",
 			Record: map[string]interface{}{
-				"index":   1,
+				"index":   0,
 				"user_id": "unique",
 				"id":      "unique",
 				"value":   "fighter",
@@ -58,7 +58,7 @@ func TestDecomposer(t *testing.T) {
 		&OutputEvent{
 			Table: "user_tags",
 			Record: map[string]interface{}{
-				"index":   2,
+				"index":   1,
 				"user_id": "unique",
 				"id":      "unique",
 				"value":   "ranker",
@@ -70,7 +70,7 @@ func TestDecomposer(t *testing.T) {
 				"id":            float64(3),
 				"type":          "weapon",
 				"count":         float64(10),
-				"index":         1,
+				"index":         0,
 				"user_id":       "unique",
 				"user_items_id": "unique",
 			},
@@ -81,7 +81,7 @@ func TestDecomposer(t *testing.T) {
 				"id":            float64(1),
 				"type":          "money",
 				"count":         float64(10000),
-				"index":         2,
+				"index":         1,
 				"user_id":       "unique",
 				"user_items_id": "unique",
 			},

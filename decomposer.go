@@ -142,7 +142,7 @@ func (d *Decomposer) decomposeArray(
 			obj = map[string]interface{}{}
 			obj["value"] = v
 		}
-		obj["index"] = i + 1
+		obj["index"] = i
 		obj[uidColumnName] = uidColumnValue
 		d.decomposeObject(tableName, obj)
 	}
