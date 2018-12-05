@@ -1,8 +1,9 @@
-package decomposer
+package decomposer_test
 
 import (
 	"testing"
 
+	. "github.com/KoteiIto/go-log-decomposer"
 	"github.com/stretchr/testify/assert"
 )
 
